@@ -36,7 +36,7 @@ void max_filter(cv::Mat &img , int k_size){
         
     }
     //At the end we apply the modfifies at the original image
-    img = img_clone;
+    img = img_clone; // cv Deep copy
 }
 
 // MIN FILTER
