@@ -188,7 +188,8 @@ int main(int argc, char** argv){
     // the average distance between matches of consecutive images
     
     cv::Mat H;
-    H = cv::findHomography(match_image1, match_image2, cv::RANSAC); 
+    // To have positive value of the translation is important to pass first the second image and then the first
+    H = cv::findHomography(match_image2, match_image1, cv::RANSAC); 
     std::cout<<"H = "<< std::endl; 
     printMatrix(H); 
     
@@ -217,10 +218,10 @@ int main(int argc, char** argv){
 
     // Coping inside all the images with the rispective translation
     cv::Rect roi_dest0(0, 0 , images[2].cols, images[2].rows);
-    std::cout<<"traslation : "<< H.at<double>(0,2)<<std::endl;
-    std::cout<<"starting point roi : "<< images[2].cols + H.at<double>(0,2)<<std::endl;
+    std::cout<<"traslation : "<< (int) H.at<double>(0,2)<<std::endl;
+    std::cout<<"starting point roi : "<< images[2].cols - (int) H.at<double>(0,2)<<std::endl;
     
-    cv::Rect roi_dest1(images[2].cols + H.at<double>(0,2), 0 , images[2].cols, images[2].rows);
+    cv::Rect roi_dest1((int) H.at<double>(0,2), 0 , images[2].cols, images[2].rows);
 
     images[2].copyTo(base_image(roi_dest0));
     images[3].copyTo(base_image(roi_dest1));

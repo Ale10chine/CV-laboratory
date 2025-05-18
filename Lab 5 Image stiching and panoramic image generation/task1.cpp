@@ -23,6 +23,7 @@ void printMatrix(const cv::Mat& matrix);
 // Function to equalize histogram equalization to an input images vector
 std::vector<cv::Mat> equalize_images(const std::vector<cv::Mat>& images);
 
+// Componing a 360 degree image starting from a dataset
 int main(int argc, char** argv){
 
 // ---------------- LOADING OF THE IMAGES ----------------
@@ -112,7 +113,7 @@ int main(int argc, char** argv){
     // This information will be usful at the end in order to know how we can create from scratch the 
     // global 360 degree image, merging all the images in this one with the correct overlappings
     // and distorsion applyed
-    std::vector<double> x_trans;
+    std::vector<int> x_trans;
     // Now the output of the H homography matrix will be something like that
     // The matrix H has the following form, where (x, y) are the coordinates in image 1,
     // (x', y') are the corresponding coordinates in image 2, and 's' is a scale factor:
@@ -169,10 +170,10 @@ int main(int argc, char** argv){
         // the average distance between matches of consecutive images
 
         cv::Mat H;
-        H = cv::findHomography(match_image1, match_image2, cv::RANSAC);
+        H = cv::findHomography(match_image2, match_image1, cv::RANSAC);
         std::cout << "H = " << std::endl;
         printMatrix(H);
-        x_trans.push_back(H.at<double>(0, 2));
+        x_trans.push_back((int)H.at<double>(0, 2));
         
     }
     std::cout << "Vector containing all the translation: \n ";
@@ -181,6 +182,7 @@ int main(int argc, char** argv){
     {
         std::cout << x_trans[i] << " ";
     }
+    std::cout<<std::endl;
 
 
  // ---------------- 360 DEGREE IMAGE CREATION ----------------
@@ -197,15 +199,16 @@ int main(int argc, char** argv){
     // Images equalization
     images = equalize_images(images);
 
-    double tot_translation;
+    int tot_translation;
     for (int i = 0; i < x_trans.size(); i++)
     {
        tot_translation += x_trans[i];
     }
 
     // widt = tot_images width + total_translation (where notice this value is negative!)
-   int width = images.size() * images[0].cols + std::ceil(tot_translation);
-   std::cout<<width<<std::endl;
+   //int width = images.size() * images[0].cols - (tot_translation);
+   int width = images[0].cols + tot_translation;
+   std::cout<<"Width of the base image = "<<width<<std::endl;
 
    cv::Mat base_image = cv::Mat(images[0].rows, width, images[0].type(), cv::Scalar(0, 0, 0));
 
@@ -215,7 +218,7 @@ int main(int argc, char** argv){
 
    for (int i = 0; i < images.size() - 1; i++)
    {
-       tmp_width += images[i].cols + x_trans[i];
+       tmp_width += x_trans[i];
        cv::Rect roi_dest_i(tmp_width, 0, images[i].cols, images[i].rows);
        roi.push_back(roi_dest_i);
    }
@@ -238,7 +241,7 @@ int main(int argc, char** argv){
    {
        images[i].copyTo(base_image(roi[i - 1]));
    }
-   
+   std::cout<<"Image with "<< images[0].cols <<"\n";
 
    cv::imshow("360 degree image", base_image);
    cv::waitKey(0);
@@ -316,7 +319,8 @@ Notes:
 RANSAC (RANdom SAmple Consensus) is a robust iterative algorithm to estimate the parameters of a
 mathematical model from a dataset containing outliers. It randomly selects a subset of data (sample),
 estimates the model, and checks which other points in the original set are consistent with this model
-(inliers). It repeats this process multiple times, keeping the model with the most inliers.
+(inliers). It repeats this process multiple times, keeping the model with the most inliers. It's used
+in the homography function.
 
 Homography is a planar geometric transformation (a 3x3 matrix) that relates corresponding points
 between two different images of the same plane or a planar scene. It allows remapping points from one
